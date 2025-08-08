@@ -1,1 +1,275 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ฟอร์มแบบสอบถามสุขภาพ</title>
+    <style>
+        /* CSS ที่ปรับแก้ตามโทนสีใหม่ */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2F4156; /* Navy */
+            color: #FFFFFF; /* White */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
 
+        .container {
+            background-color: #F5EFEB; /* Beige */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2F4156; /* Navy */
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2F4156; /* Navy */
+        }
+        
+        .radio-group label {
+            display: inline-block;
+            margin-right: 15px;
+            color: #2F4156; /* Navy */
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #567C8D; /* Teal */
+            border-radius: 4px;
+            box-sizing: border-box;
+            color: #333;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #567C8D; /* Teal */
+            color: #FFFFFF; /* White */
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #C8D9E6; /* Sky Blue */
+            color: #2F4156; /* Navy */
+        }
+
+        .error-message {
+            color: #2F4156; /* Navy */
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #F5EFEB; /* Beige */
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+            width: 80%;
+            max-width: 400px;
+            color: #333;
+        }
+
+        .close-btn {
+            color: #2F4156; /* Navy */
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #otherHealthIssues {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ฟอร์มแบบสอบถามสุขภาพ (Health Survey)</h1>
+        
+        <form id="healthSurveyForm" novalidate>
+            <div class="form-group">
+                <label for="age">อายุ (ปี):</label>
+                <input type="number" id="age" name="age">
+                <span class="error-message" id="ageError"></span>
+            </div>
+
+            <div class="form-group radio-group">
+                <label>เพศ:</label>
+                <input type="radio" id="male" name="gender" value="ชาย" checked>
+                <label for="male">ชาย</label>
+                <input type="radio" id="female" name="gender" value="หญิง">
+                <label for="female">หญิง</label>
+            </div>
+
+            <div class="form-group">
+                <label for="weight">น้ำหนัก (กิโลกรัม):</label>
+                <input type="number" id="weight" name="weight">
+                <span class="error-message" id="weightError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="height">ส่วนสูง (เซนติเมตร):</label>
+                <input type="number" id="height" name="height">
+                <span class="error-message" id="heightError"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="checkbox" id="hasHealthIssues">
+                <label for="hasHealthIssues">มีโรคประจำตัว</label>
+                <textarea id="otherHealthIssues" name="otherHealthIssues" rows="4" placeholder="กรุณาระบุโรคประจำตัว..."></textarea>
+                <span class="error-message" id="healthIssuesError"></span>
+            </div>
+
+            <button type="submit">คำนวณ BMI</button>
+        </form>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <p id="modalText"></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('healthSurveyForm');
+            const ageInput = document.getElementById('age');
+            const weightInput = document.getElementById('weight');
+            const heightInput = document.getElementById('height');
+            const hasHealthIssuesCheckbox = document.getElementById('hasHealthIssues');
+            const otherHealthIssuesTextarea = document.getElementById('otherHealthIssues');
+            const ageError = document.getElementById('ageError');
+            const weightError = document.getElementById('weightError');
+            const heightError = document.getElementById('heightError');
+            const healthIssuesError = document.getElementById('healthIssuesError');
+            const resultModal = document.getElementById('resultModal');
+            const modalText = document.getElementById('modalText');
+            const closeModalBtn = document.querySelector('.close-btn');
+
+            hasHealthIssuesCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    otherHealthIssuesTextarea.style.display = 'block';
+                } else {
+                    otherHealthIssuesTextarea.style.display = 'none';
+                    healthIssuesError.textContent = '';
+                }
+            });
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                resetErrors();
+
+                let isValid = true;
+
+                const age = parseInt(ageInput.value, 10);
+                const weight = parseFloat(weightInput.value);
+                const height = parseFloat(heightInput.value);
+                const hasIssues = hasHealthIssuesCheckbox.checked;
+
+                // 1. ตรวจสอบอายุ: ต้องอยู่ระหว่าง 15-60 ปี
+                if (isNaN(age) || age < 15 || age > 60) {
+                    ageError.textContent = 'อายุต้องอยู่ระหว่าง 15-60 ปี';
+                    isValid = false;
+                }
+
+                // 2. ตรวจสอบน้ำหนักและส่วนสูง: ต้องเป็นค่าบวก
+                if (isNaN(weight) || weight <= 0) {
+                    weightError.textContent = 'น้ำหนักต้องเป็นค่าบวก';
+                    isValid = false;
+                }
+                if (isNaN(height) || height <= 0) {
+                    heightError.textContent = 'ส่วนสูงต้องเป็นค่าบวก';
+                    isValid = false;
+                }
+
+                // 3. ตรวจสอบโรคประจำตัว: ถ้าเลือก checkbox ต้องกรอก textarea
+                if (hasIssues && otherHealthIssuesTextarea.value.trim() === '') {
+                    healthIssuesError.textContent = 'กรุณาระบุโรคประจำตัว';
+                    isValid = false;
+                }
+                
+                // การประมวลผลและแสดงผล
+                if (isValid) {
+                    const heightInMeters = height / 100;
+                    const bmi = weight / (heightInMeters * heightInMeters);
+                    const bmiCategory = getBmiCategory(bmi);
+
+                    showModal(`ค่า BMI ของคุณคือ: ${bmi.toFixed(2)}<br>อยู่ในเกณฑ์: ${bmiCategory}`);
+                } else {
+                    console.log('Validation failed.');
+                }
+            });
+
+            function getBmiCategory(bmi) {
+                if (bmi < 18.5) return 'น้ำหนักน้อย';
+                if (bmi >= 18.5 && bmi <= 22.9) return 'ปกติ';
+                if (bmi >= 23 && bmi <= 24.9) return 'น้ำหนักเกิน';
+                if (bmi >= 25 && bmi <= 29.9) return 'อ้วน';
+                return 'อ้วนมาก';
+            }
+
+            function resetErrors() {
+                ageError.textContent = '';
+                weightError.textContent = '';
+                heightError.textContent = '';
+                healthIssuesError.textContent = '';
+            }
+
+            function showModal(text) {
+                modalText.innerHTML = text;
+                resultModal.style.display = 'flex';
+            }
+
+            closeModalBtn.addEventListener('click', function() {
+                resultModal.style.display = 'none';
+                form.reset();
+                otherHealthIssuesTextarea.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
